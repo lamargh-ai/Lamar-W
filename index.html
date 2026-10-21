@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lamar">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/lamar-180.png">
+<title>Lamar</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#101828;--muted:#667085;--accent:#111827;--line:#e4e7ec}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif}
+.app{max-width:760px;margin:auto;min-height:100vh;padding-bottom:90px}
+header{padding:calc(18px + env(safe-area-inset-top)) 20px 14px;background:var(--accent);color:white;border-radius:0 0 26px 26px}
+.brand{font-size:34px;font-weight:800}.tag{opacity:.72;margin-top:3px}
+main{padding:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin:12px 0;box-shadow:0 5px 18px #1018280b}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mission{padding:16px;border:1px solid var(--line);border-radius:16px;background:white;text-align:left;font-weight:700}
+.mission small{display:block;color:var(--muted);font-weight:500;margin-top:5px}
+textarea{width:100%;min-height:100px;border:1px solid var(--line);border-radius:15px;padding:13px;font:inherit;resize:vertical}
+button{font:inherit;border:0}.primary{width:100%;padding:14px;border-radius:15px;background:#111827;color:white;font-weight:750}
+.secondary{padding:11px 14px;border-radius:13px;background:#eef2f6;font-weight:700}
+.result{white-space:pre-wrap;line-height:1.55}.hidden{display:none}
+nav{position:fixed;bottom:0;left:0;right:0;background:#ffffffeb;backdrop-filter:blur(18px);border-top:1px solid var(--line);padding:8px max(12px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom));display:flex;justify-content:center;z-index:10}
+nav button{flex:1;max-width:180px;background:transparent;padding:9px;color:var(--muted)}nav button.active{color:var(--text);font-weight:800}
+.status{font-size:13px;color:var(--muted);margin-top:9px}
+.install{background:#eef4ff;border:1px solid #d5e4ff}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div class="brand">Lamar</div><div class="tag">Your personal AI opportunity assistant</div></header>
+
+<main>
+<section id="home">
+<div class="card install">
+<strong>Install Lamar on your iPhone</strong>
+<p>In Safari, tap <b>Share</b> → <b>Add to Home Screen</b> → <b>Add</b>.</p>
+</div>
+
+<div class="card">
+<h2>What do you want to accomplish?</h2>
+<div class="grid">
+<button class="mission" onclick="setQ('Find current nursing jobs and career opportunities in Ghana that I can apply for.')">💼 Jobs<small>Find current openings</small></button>
+<button class="mission" onclick="setQ('Find legitimate ways I can earn income online using a smartphone and my skills.')">💰 Income<small>Find realistic options</small></button>
+<button class="mission" onclick="setQ('Find useful skills and courses I can learn to improve my career and income.')">📚 Learn<small>Build a skill plan</small></button>
+<button class="mission" onclick="setQ('Find practical small business opportunities I could explore in Ghana.')">🚀 Business<small>Explore ideas</small></button>
+</div>
+</div>
+
+<div class="card">
+<h2>Ask Lamar</h2>
+<textarea id="question" placeholder="Ask Lamar anything..."></textarea>
+<br><br><button class="primary" onclick="ask()">Ask Lamar</button>
+<div id="status" class="status">Ready.</div>
+</div>
+
+<div id="resultCard" class="card hidden">
+<h3>Lamar's response</h3><div id="result" class="result"></div>
+</div>
+</section>
+
+<section id="saved" class="hidden">
+<div class="card"><h2>Saved</h2><p class="status">Saved opportunities will appear here when the live backend is connected.</p></div>
+</section>
+
+<section id="profile" class="hidden">
+<div class="card"><h2>Lamar</h2><p>Your personal AI assistant for research, opportunities, learning and planning.</p>
+<hr>
+<p><b>Connection</b></p><p id="connection">Demo mode — backend not connected.</p>
+</div>
+</section>
+</main>
+
+<nav>
+<button id="homeBtn" class="active" onclick="tab('home',this)">⌂<br>Home</button>
+<button onclick="tab('saved',this)">♡<br>Saved</button>
+<button onclick="tab('profile',this)">◎<br>Profile</button>
+</nav>
+</div>
+
+<script>
+const API_KEY="LAMAR_API_URL";
+let API=localStorage.getItem("lamar_api")||"";
+
+function setQ(q){document.getElementById("question").value=q;document.getElementById("question").focus()}
+function tab(id,btn){
+ ["home","saved","profile"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id));
+ document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));btn.classList.add("active");
+}
+async function ask(){
+ const q=document.getElementById("question").value.trim();
+ if(!q)return;
+ const status=document.getElementById("status"), card=document.getElementById("resultCard"), result=document.getElementById("result");
+ card.classList.remove("hidden");status.textContent="Lamar is thinking...";
+ result.textContent="";
+ if(!API){
+   result.textContent="Lamar is installed and ready, but live AI is not connected yet.\n\nTo enable live answers, connect the Lamar backend URL in the production build.";
+   status.textContent="Demo mode";
+   return;
+ }
+ try{
+   const r=await fetch(API.replace(/\/$/,"")+"/api/ask",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:q,context:"iPhone web app"})});
+   if(!r.ok)throw new Error("Server error");
+   const j=await r.json();result.textContent=j.answer||"No response returned.";status.textContent="Live";
+ }catch(e){result.textContent="Lamar could not reach the AI server. Check your connection.";status.textContent="Connection problem";}
+}
+if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));
+</script>
+</body>
+</html>
